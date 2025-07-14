@@ -38,14 +38,23 @@ router.delete("/:id", deleteNotification);
 // Get notifications by patient
 router.get("/patient/:patientId", getNotificationsByPatient);
 
+// Get current patient's notifications
+router.get("/patient/me", getNotificationsByPatient);
+
+// Get current patient's unread notifications
+router.get("/patient/me/unread", getUnreadNotifications);
+
+// Get unread notifications by patientId (must come after /me/unread)
+router.get("/patient/:patientId/unread", getUnreadNotifications);
+
 // Get notifications by type
 router.get("/type/:type", getNotificationsByType);
 
-// Get unread notifications
-router.get("/patient/:patientId/unread", getUnreadNotifications);
-
 // Mark notification as read
 router.patch("/:id/read", markNotificationAsRead);
+
+// Mark all notifications as read for current patient
+router.patch("/patient/me/read-all", markAllNotificationsAsRead);
 
 // Mark all notifications as read
 router.patch("/patient/:patientId/read-all", markAllNotificationsAsRead);

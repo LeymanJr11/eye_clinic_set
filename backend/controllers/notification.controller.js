@@ -123,7 +123,14 @@ export const deleteNotification = async (req, res, next) => {
 // Get notifications by patient
 export const getNotificationsByPatient = async (req, res, next) => {
   try {
-    const { patientId } = req.params;
+    let patientId;
+
+    // If route is /patient/me, use current user's ID
+    if (req.params.patientId === "me") {
+      patientId = req.user.id;
+    } else {
+      patientId = req.params.patientId;
+    }
 
     const notifications = await Notification.findAll({
       where: {
@@ -166,8 +173,10 @@ export const getNotificationsByType = async (req, res, next) => {
 // Get unread notifications
 export const getUnreadNotifications = async (req, res, next) => {
   try {
-    const { patientId } = req.params;
-
+    let patientId = req.user.id;
+    if (req.params.patientId && req.params.patientId !== "me") {
+      patientId = req.params.patientId;
+    }
     const notifications = await Notification.findAll({
       where: {
         patient_id: patientId,
@@ -213,7 +222,14 @@ export const markNotificationAsRead = async (req, res, next) => {
 // Mark all notifications as read
 export const markAllNotificationsAsRead = async (req, res, next) => {
   try {
-    const { patientId } = req.params;
+    let patientId;
+
+    // If route is /patient/me/read-all, use current user's ID
+    if (req.params.patientId === "me") {
+      patientId = req.user.id;
+    } else {
+      patientId = req.params.patientId;
+    }
 
     await Notification.update(
       { is_read: true },

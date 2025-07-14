@@ -61,30 +61,7 @@ export const DoctorTimeSlotsPage = () => {
         return format(new Date(`2000-01-01T${time}`), "h:mm a");
       },
     },
-    {
-      accessorKey: "is_available",
-      header: "Status",
-      cell: ({ row }) => {
-        const isAvailable = row.getValue("is_available");
-        return (
-          <Badge className={isAvailable ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
-            {isAvailable ? "Available" : "Unavailable"}
-          </Badge>
-        );
-      },
-    },
-    {
-      accessorKey: "appointment_count",
-      header: "Booked Appointments",
-      cell: ({ row }) => {
-        const count = row.original.appointment_count || 0;
-        return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800">
-            {count} {count === 1 ? "appointment" : "appointments"}
-          </Badge>
-        );
-      },
-    }
+
   ];
 
   return (

@@ -5,12 +5,18 @@ import 'package:provider/provider.dart';
 import 'package:eye_app/providers/auth_provider.dart';
 import 'package:eye_app/providers/doctor_provider.dart';
 import 'package:eye_app/providers/appointment_provider.dart';
+import 'package:eye_app/providers/notification_provider.dart';
+import 'package:eye_app/providers/eye_test_provider.dart';
 import 'package:eye_app/screens/auth/register_screen.dart';
 import 'package:eye_app/screens/welcome_screen.dart';
 import 'package:eye_app/screens/patient/patient_dashboard.dart';
+import 'package:eye_app/services/auth_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize auth service before running the app
+  await AuthService().initialize();
 
   runApp(const MyApp());
 }
@@ -25,6 +31,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DoctorProvider()),
         ChangeNotifierProvider(create: (_) => AppointmentProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => EyeTestProvider()),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, authProvider, _) {

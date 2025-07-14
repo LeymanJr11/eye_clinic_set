@@ -18,7 +18,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Delay the auth check slightly to ensure the splash screen is visible
+    // Check authentication immediately since AuthService is already initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAuthentication();
     });
@@ -26,10 +26,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   Future<void> _checkAuthentication() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.checkAuth();
 
-    // Set a minimum display time for the splash screen (1.5 seconds)
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // AuthService is already initialized in main(), so we just need to check the current state
+    // Set a minimum display time for the splash screen (1 second)
+    await Future.delayed(const Duration(milliseconds: 1000));
 
     if (mounted) {
       setState(() {

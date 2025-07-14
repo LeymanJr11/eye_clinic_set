@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiClient {
-  final String baseUrl = 'http://192.168.100.75:3200/api/v1';
+  final String baseUrl = 'http://localhost:3200/api/v1';
   static final ApiClient _instance = ApiClient._internal();
   late final Dio _dio;
 
@@ -33,10 +33,23 @@ class ApiClient {
       token = 'Bearer $token';
     }
     _dio.options.headers!['Authorization'] = token;
+
+    if (kDebugMode) {
+      print('Token set in API client: ${token.substring(0, 10)}...');
+    }
   }
 
   void clearToken() {
     _dio.options.headers?.remove('Authorization');
+
+    if (kDebugMode) {
+      print('Token cleared from API client');
+    }
+  }
+
+  // Check if token is set
+  bool get hasToken {
+    return _dio.options.headers?['Authorization'] != null;
   }
 
   // Generic request method
@@ -118,6 +131,16 @@ class ApiClient {
       errorMessage = response.data.toString();
     }
 
+    // Check for authentication errors
+    if (response.statusCode == 401) {
+      if (kDebugMode) {
+        print(
+            'Authentication error detected. Token may be invalid or expired.');
+      }
+      // Clear token on authentication error
+      clearToken();
+    }
+
     return {
       'success': false,
       'message': errorMessage,
@@ -140,6 +163,16 @@ class ApiClient {
       }
     } else {
       errorMessage = _getErrorMessage(error);
+    }
+
+    // Check for authentication errors
+    if (error.response?.statusCode == 401) {
+      if (kDebugMode) {
+        print(
+            'Authentication error detected. Token may be invalid or expired.');
+      }
+      // Clear token on authentication error
+      clearToken();
     }
 
     return {

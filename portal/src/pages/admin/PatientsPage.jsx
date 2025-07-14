@@ -79,11 +79,11 @@ export const PatientsPage = () => {
         const patient = row.original;
         return (
           <div className="flex gap-2">
-            <Link to={`/admin/patients/${patient.id}`}>
+            {/* <Link to={`/admin/patients/${patient.id}`}>
               <Button size="sm" variant="outline">
                 <Eye className="h-4 w-4 mr-1" /> View
               </Button>
-            </Link>
+            </Link> */}
             <Button size="sm" onClick={() => handleEditClick(patient)}>
               <Edit className="h-4 w-4 mr-1" /> Edit
             </Button>

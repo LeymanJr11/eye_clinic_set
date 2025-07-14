@@ -2,6 +2,7 @@ import MedicalRecord from "../models/medicalRecords.model.js";
 import Patient from "../models/patients.model.js";
 import Doctor from "../models/doctors.model.js";
 import Appointment from "../models/appointments.model.js";
+import Notification from "../models/notifications.model.js";
 import { Op } from "sequelize";
 import path from "path";
 import fs from "fs/promises";
@@ -52,6 +53,32 @@ export const createMedicalRecord = async (req, res, next) => {
       description,
       file_url,
     });
+
+    // Create notification for the patient
+    try {
+      // Find the doctor's name by their id from doctors.model.js
+      let doctorName = "your doctor";
+      try {
+        const doctor = await Doctor.findByPk(final_doctor_id, {
+          attributes: ["name"],
+        });
+        if (doctor && doctor.name) {
+          doctorName = doctor.name;
+        }
+      } catch (doctorLookupError) {
+        console.error("Error fetching doctor name:", doctorLookupError);
+      }
+
+      await Notification.create({
+        patient_id,
+        message: `New ${record_type} record has been added by Dr. ${doctorName}. Check your medical records for details.`,
+        type: "medication",
+        is_read: false,
+      });
+    } catch (notificationError) {
+      console.error("Error creating notification:", notificationError);
+      // Don't fail the main operation if notification fails
+    }
 
     res.status(201).json({
       success: true,

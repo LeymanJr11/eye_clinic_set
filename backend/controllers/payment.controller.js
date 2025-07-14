@@ -1,6 +1,7 @@
 import Payment from "../models/payments.model.js";
 import Patient from "../models/patients.model.js";
 import Appointment from "../models/appointments.model.js";
+import Notification from "../models/notifications.model.js";
 import { initiateWaafiPayment } from "../services/payment.service.js";
 import { Op } from "sequelize";
 import sequelize from "../database/db.js";
@@ -44,6 +45,19 @@ export const createPayment = async (req, res, next) => {
       },
       { transaction }
     );
+
+    // Create notification for the patient
+    try {
+      await Notification.create({
+        patient_id: appointment.patient_id,
+        message: `Payment of $${amount} has been created for your appointment. Please complete the payment to confirm your appointment.`,
+        type: "general",
+        is_read: false,
+      });
+    } catch (notificationError) {
+      console.error("Error creating notification:", notificationError);
+      // Don't fail the main operation if notification fails
+    }
 
     await transaction.commit();
 
@@ -167,6 +181,19 @@ export const processPayment = async (req, res, next) => {
         },
         { transaction }
       );
+
+      // Create notification for successful payment
+      try {
+        await Notification.create({
+          patient_id: payment.patient_id,
+          message: `Payment of $${payment.amount} has been processed successfully. Your appointment is now confirmed.`,
+          type: "general",
+          is_read: false,
+        });
+      } catch (notificationError) {
+        console.error("Error creating notification:", notificationError);
+        // Don't fail the main operation if notification fails
+      }
 
       await transaction.commit();
 
@@ -395,7 +422,38 @@ export const updatePaymentStatus = async (req, res, next) => {
       });
     }
 
+    const oldStatus = payment.status;
     await payment.update({ status });
+
+    // Create notification for status changes
+    try {
+      let message = "";
+      switch (status) {
+        case "paid":
+          message = `Your payment of $${payment.amount} has been confirmed. Thank you!`;
+          break;
+        case "failed":
+          message = `Your payment of $${payment.amount} has failed. Please try again or contact support.`;
+          break;
+        case "refunded":
+          message = `Your payment of $${payment.amount} has been refunded. Please check your account.`;
+          break;
+        default:
+          message = `Your payment status has been updated to ${status}.`;
+      }
+
+      if (message && oldStatus !== status) {
+        await Notification.create({
+          patient_id: payment.patient_id,
+          message,
+          type: "general",
+          is_read: false,
+        });
+      }
+    } catch (notificationError) {
+      console.error("Error creating notification:", notificationError);
+      // Don't fail the main operation if notification fails
+    }
 
     res.status(200).json({
       success: true,

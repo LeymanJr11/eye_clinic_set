@@ -138,7 +138,7 @@ export const feedbackSchema = z.object({
 
 // Eye Test Schema
 export const eyeTestSchema = z.object({
-  patient_id: z.number().int("Patient ID must be an integer"),
+  // patient_id: z.number().int("Patient ID must be an integer"),
   test_type: z.enum([
     "color_blindness",
     "visual_acuity",

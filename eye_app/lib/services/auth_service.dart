@@ -15,11 +15,13 @@ class AuthService {
   // Store user data
   Map<String, dynamic>? _userData;
   String? _token;
+  bool _isInitialized = false;
 
   // Getters
   Map<String, dynamic>? get userData => _userData;
   String? get token => _token;
-  bool get isAuthenticated => _token != null;
+  bool get isAuthenticated => _token != null && _token!.isNotEmpty;
+  bool get isInitialized => _isInitialized;
 
   // Singleton factory
   factory AuthService() => _instance;
@@ -28,6 +30,8 @@ class AuthService {
 
   // Initialize the service
   Future<void> initialize() async {
+    if (_isInitialized) return;
+
     try {
       final prefs = await SharedPreferences.getInstance();
       _token = prefs.getString('token');
@@ -35,19 +39,68 @@ class AuthService {
       // Parse stored user data if available
       final userDataString = prefs.getString('userData');
       if (userDataString != null) {
-        _userData = jsonDecode(userDataString) as Map<String, dynamic>;
+        try {
+          _userData = jsonDecode(userDataString) as Map<String, dynamic>;
+        } catch (e) {
+          if (kDebugMode) {
+            print('Error parsing stored user data: $e');
+          }
+          // Clear corrupted data
+          await prefs.remove('userData');
+          _userData = null;
+        }
       }
 
-      if (_token != null) {
+      if (_token != null && _token!.isNotEmpty) {
         _apiClient.setToken(_token!);
+        if (kDebugMode) {
+          print('Token restored from storage: ${_token!.substring(0, 10)}...');
+        }
       }
 
+      _isInitialized = true;
       authStateChanges.value = isAuthenticated;
+
+      if (kDebugMode) {
+        print('AuthService initialized. Authenticated: $isAuthenticated');
+      }
     } catch (e) {
       if (kDebugMode) {
         print('Error initializing auth service: $e');
       }
-      rethrow;
+      _isInitialized = true;
+      authStateChanges.value = false;
+    }
+  }
+
+  // Refresh token from storage
+  Future<void> refreshTokenFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storedToken = prefs.getString('token');
+
+      if (storedToken != null && storedToken.isNotEmpty) {
+        _token = storedToken;
+        _apiClient.setToken(_token!);
+        authStateChanges.value = true;
+
+        if (kDebugMode) {
+          print('Token refreshed from storage: ${_token!.substring(0, 10)}...');
+        }
+      } else {
+        _token = null;
+        authStateChanges.value = false;
+
+        if (kDebugMode) {
+          print('No token found in storage');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error refreshing token: $e');
+      }
+      _token = null;
+      authStateChanges.value = false;
     }
   }
 
@@ -128,6 +181,10 @@ class AuthService {
       await prefs.setString('userData', jsonEncode(_userData));
     }
 
+    if (kDebugMode) {
+      print('Login successful. Token saved: ${_token!.substring(0, 10)}...');
+    }
+
     // Notify listeners
     authStateChanges.value = true;
   }
@@ -146,6 +203,10 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('token');
       await prefs.remove('userData');
+
+      if (kDebugMode) {
+        print('Logout successful. Token cleared.');
+      }
 
       // Notify listeners
       authStateChanges.value = false;

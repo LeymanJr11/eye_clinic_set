@@ -17,11 +17,49 @@ class AuthProvider with ChangeNotifier {
 
   AuthProvider() {
     _authService.authStateChanges.addListener(_onAuthStateChanged);
+    // Initialize auth service when provider is created
+    _initializeAuth();
   }
 
   void _onAuthStateChanged() {
     _isAuthenticated = _authService.isAuthenticated;
     _userData = _authService.userData;
+    notifyListeners();
+  }
+
+  // Initialize authentication
+  Future<void> _initializeAuth() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _authService.initialize();
+      _isAuthenticated = _authService.isAuthenticated;
+      _userData = _authService.userData;
+    } catch (e) {
+      _isAuthenticated = false;
+      _userData = null;
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  // Refresh token from storage
+  Future<void> refreshToken() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _authService.refreshTokenFromStorage();
+      _isAuthenticated = _authService.isAuthenticated;
+      _userData = _authService.userData;
+    } catch (e) {
+      _isAuthenticated = false;
+      _userData = null;
+    }
+
+    _isLoading = false;
     notifyListeners();
   }
 
@@ -120,6 +158,8 @@ class AuthProvider with ChangeNotifier {
 
     try {
       await _authService.initialize();
+      _isAuthenticated = _authService.isAuthenticated;
+      _userData = _authService.userData;
     } catch (e) {
       _isAuthenticated = false;
       _userData = null;

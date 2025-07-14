@@ -1,5 +1,6 @@
 import EyeTest from "../models/eyeTests.model.js";
 import Patient from "../models/patients.model.js";
+import Notification from "../models/notifications.model.js";
 import { Op } from "sequelize";
 
 // Create eye test
@@ -24,6 +25,19 @@ export const createEyeTest = async (req, res, next) => {
       test_type,
       result,
     });
+
+    // Create notification for the patient
+    try {
+      await Notification.create({
+        patient_id: actualPatientId,
+        message: `New ${test_type} eye test result has been added. Check your medical records for details.`,
+        type: "medication",
+        is_read: false,
+      });
+    } catch (notificationError) {
+      console.error("Error creating notification:", notificationError);
+      // Don't fail the main operation if notification fails
+    }
 
     res.status(201).json({
       success: true,

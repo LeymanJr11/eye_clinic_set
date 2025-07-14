@@ -2,6 +2,7 @@ import Appointment from "../models/appointments.model.js";
 import Patient from "../models/patients.model.js";
 import Doctor from "../models/doctors.model.js";
 import TimeSlot from "../models/timeSlots.model.js";
+import Notification from "../models/notifications.model.js";
 import { Op } from "sequelize";
 
 // Create appointment (admin or patient)
@@ -94,6 +95,21 @@ export const createAppointment = async (req, res, next) => {
       appointment_date,
       status: status || "scheduled",
     });
+
+    // Create notification for the patient
+    try {
+      await Notification.create({
+        patient_id,
+        message: `Your appointment has been scheduled for ${new Date(
+          appointment_date
+        ).toLocaleDateString()}. Please arrive 10 minutes before your scheduled time.`,
+        type: "appointment",
+        is_read: false,
+      });
+    } catch (notificationError) {
+      console.error("Error creating notification:", notificationError);
+      // Don't fail the main operation if notification fails
+    }
 
     res.status(201).json({
       success: true,
@@ -465,7 +481,45 @@ export const updateAppointmentStatus = async (req, res, next) => {
       });
     }
 
+    const oldStatus = appointment.status;
     await appointment.update({ status });
+
+    // Create notification for status changes
+    try {
+      let message = "";
+      switch (status) {
+        case "confirmed":
+          message = `Your appointment has been confirmed for ${new Date(
+            appointment.appointment_date
+          ).toLocaleDateString()}. Please arrive 10 minutes before your scheduled time.`;
+          break;
+        case "completed":
+          message = `Your appointment has been marked as completed. Thank you for visiting us!`;
+          break;
+        case "cancelled":
+          message = `Your appointment has been cancelled. Please contact us to reschedule if needed.`;
+          break;
+        case "rescheduled":
+          message = `Your appointment has been rescheduled for ${new Date(
+            appointment.appointment_date
+          ).toLocaleDateString()}. Please check your updated appointment details.`;
+          break;
+        default:
+          message = `Your appointment status has been updated to ${status}.`;
+      }
+
+      if (message && oldStatus !== status) {
+        await Notification.create({
+          patient_id: appointment.patient_id,
+          message,
+          type: "appointment",
+          is_read: false,
+        });
+      }
+    } catch (notificationError) {
+      console.error("Error creating notification:", notificationError);
+      // Don't fail the main operation if notification fails
+    }
 
     res.status(200).json({
       success: true,
