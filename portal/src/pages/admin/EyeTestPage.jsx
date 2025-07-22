@@ -420,7 +420,7 @@ export const EyeTestPage = () => {
 
       {/* Create Test Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className={"lg:max-w-screen-lg overflow-y-scroll max-h-screen"}>
           <DialogHeader>
             <DialogTitle>Create New Eye Test</DialogTitle>
           </DialogHeader>
@@ -516,7 +516,7 @@ export const EyeTestPage = () => {
 
       {/* Edit Test Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className={"lg:max-w-screen-lg overflow-y-scroll max-h-screen"}>
           <DialogHeader>
             <DialogTitle>Edit Eye Test</DialogTitle>
           </DialogHeader>
@@ -612,7 +612,7 @@ export const EyeTestPage = () => {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className={"lg:max-w-screen-lg overflow-y-scroll max-h-screen"}>
           <DialogHeader>
             <DialogTitle>Delete Eye Test</DialogTitle>
           </DialogHeader>
@@ -645,7 +645,7 @@ export const EyeTestPage = () => {
 
       {/* View Test Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent>
+        <DialogContent className={"lg:max-w-screen-lg overflow-y-scroll max-h-screen"}>
           <DialogHeader>
             <DialogTitle>Eye Test Details</DialogTitle>
           </DialogHeader>

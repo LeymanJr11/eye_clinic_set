@@ -71,10 +71,15 @@ export const ViewDoctorPage = () => {
     "Sunday",
   ];
 
-  const timeOptions = Array.from({ length: 24 }, (_, i) => {
-    const hour = i.toString().padStart(2, "0");
-    return [`${hour}:00:00`, `${hour}:30:00`];
-  }).flat();
+const timeOptions = Array.from({ length: 24 }, (_, i) => {
+  const hour = i.toString().padStart(2, "0");
+  return [
+    `${hour}:00:00`,
+    `${hour}:15:00`,
+    `${hour}:30:00`,
+    `${hour}:45:00`
+  ];
+}).flat();
 
   const appointmentTypes = [
     "regular",

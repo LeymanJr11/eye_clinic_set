@@ -22,17 +22,9 @@ export const createTimeSlot = async (req, res, next) => {
       where: {
         doctor_id,
         day_of_week,
-        [Op.or]: [
-          {
-            start_time: {
-              [Op.between]: [start_time, end_time],
-            },
-          },
-          {
-            end_time: {
-              [Op.between]: [start_time, end_time],
-            },
-          },
+        [Op.and]: [
+          { start_time: { [Op.lt]: end_time } },
+          { end_time: { [Op.gt]: start_time } },
         ],
       },
     });
@@ -163,17 +155,9 @@ export const updateTimeSlot = async (req, res, next) => {
         id: {
           [Op.ne]: id,
         },
-        [Op.or]: [
-          {
-            start_time: {
-              [Op.between]: [start_time, end_time],
-            },
-          },
-          {
-            end_time: {
-              [Op.between]: [start_time, end_time],
-            },
-          },
+        [Op.and]: [
+          { start_time: { [Op.lt]: end_time } },
+          { end_time: { [Op.gt]: start_time } },
         ],
       },
     });

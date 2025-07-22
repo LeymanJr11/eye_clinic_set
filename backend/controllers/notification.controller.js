@@ -222,12 +222,8 @@ export const markNotificationAsRead = async (req, res, next) => {
 // Mark all notifications as read
 export const markAllNotificationsAsRead = async (req, res, next) => {
   try {
-    let patientId;
-
-    // If route is /patient/me/read-all, use current user's ID
-    if (req.params.patientId === "me") {
-      patientId = req.user.id;
-    } else {
+    let patientId = req.user.id;
+    if (req.params.patientId && req.params.patientId !== "me") {
       patientId = req.params.patientId;
     }
 

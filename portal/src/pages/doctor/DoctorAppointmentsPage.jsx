@@ -296,7 +296,7 @@ export const DoctorAppointmentsPage = () => {
 
       {/* Status Update Dialog */}
       <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
-        <DialogContent>
+        <DialogContent className={"lg:max-w-screen-lg overflow-y-scroll max-h-screen"}>
           <DialogHeader>
             <DialogTitle>Update Appointment Status</DialogTitle>
           </DialogHeader>
@@ -327,7 +327,7 @@ export const DoctorAppointmentsPage = () => {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className={"lg:max-w-screen-lg overflow-y-scroll max-h-screen"}>
           <DialogHeader>
             <DialogTitle>Confirm Delete</DialogTitle>
           </DialogHeader>

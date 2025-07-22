@@ -10,6 +10,7 @@ import feedbackRouter from "./feedback.routes.js";
 import eyeTestRouter from "./eyeTest.routes.js";
 import notificationRouter from "./notification.routes.js";
 import timeSlotRouter from "./timeSlot.routes.js";
+import medicationRoutes from "./medication.routes.js";
 const router = express.Router();
 
 // Auth routes
@@ -42,5 +43,7 @@ router.use("/eye-tests", eyeTestRouter);
 
 // Notification routes (protected)
 router.use("/notifications", notificationRouter);
+
+router.use("/medications", medicationRoutes);
 
 export default router;

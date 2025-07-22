@@ -91,6 +91,12 @@ export const DashboardLayout = () => {
       href: "/admin/eye-tests",
       description: "Manage eye test records",
     },
+    {
+      title: "Medications",
+      icon: FileText,
+      href: "/admin/medications",
+      description: "Manage medication records",
+    },
     // {
     //   title: "Payments",
     //   icon: CreditCard,

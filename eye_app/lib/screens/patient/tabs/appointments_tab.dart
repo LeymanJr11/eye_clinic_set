@@ -35,109 +35,109 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            backgroundColor,
-            backgroundColor.withOpacity(0.8),
-          ],
+    return RefreshIndicator(
+      onRefresh: () => Provider.of<AppointmentProvider>(context, listen: false)
+          .fetchPatientAppointments(),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              backgroundColor,
+              backgroundColor.withOpacity(0.8),
+            ],
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Your Appointments',
-              style: GoogleFonts.poppins(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: textPrimaryColor,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Your Appointments',
+                style: GoogleFonts.poppins(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: textPrimaryColor,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'View and manage your appointments',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: textSecondaryColor,
+              const SizedBox(height: 8),
+              Text(
+                'View and manage your appointments',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  color: textSecondaryColor,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: Consumer<AppointmentProvider>(
-                builder: (context, appointmentProvider, child) {
-                  if (appointmentProvider.isLoading) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
+              const SizedBox(height: 24),
+              Expanded(
+                child: Consumer<AppointmentProvider>(
+                  builder: (context, appointmentProvider, child) {
+                    if (appointmentProvider.isLoading) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
 
-                  if (appointmentProvider.error != null) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 48,
-                            color: errorColor,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            appointmentProvider.error!,
-                            style: GoogleFonts.poppins(
+                    if (appointmentProvider.error != null) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 48,
                               color: errorColor,
-                              fontSize: 16,
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+                            const SizedBox(height: 16),
+                            Text(
+                              appointmentProvider.error!,
+                              style: GoogleFonts.poppins(
+                                color: errorColor,
+                                fontSize: 16,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    }
 
-                  if (appointmentProvider.appointments.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 64,
-                            color: textSecondaryColor.withOpacity(0.5),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No appointments found',
-                            style: GoogleFonts.poppins(
-                              fontSize: 18,
-                              color: textSecondaryColor,
-                              fontWeight: FontWeight.w500,
+                    if (appointmentProvider.appointments.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size: 64,
+                              color: textSecondaryColor.withOpacity(0.5),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Your upcoming appointments will appear here',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: textSecondaryColor.withOpacity(0.7),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No appointments found',
+                              style: GoogleFonts.poppins(
+                                fontSize: 18,
+                                color: textSecondaryColor,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+                            const SizedBox(height: 8),
+                            Text(
+                              'Your upcoming appointments will appear here',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: textSecondaryColor.withOpacity(0.7),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    }
 
-                  return RefreshIndicator(
-                    onRefresh: () =>
-                        appointmentProvider.fetchPatientAppointments(),
-                    child: ListView.builder(
+                    return ListView.builder(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: appointmentProvider.appointments.length,
@@ -234,12 +234,12 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                           ),
                         );
                       },
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -352,6 +352,35 @@ class _MedicalRecordsTabState extends State<MedicalRecordsTab> {
                       color: textSecondaryColor,
                     ),
                   ),
+                  if (record['record_type'] == 'prescription' &&
+                      record['PrescriptionItems'] != null &&
+                      record['PrescriptionItems'].isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Prescribed Medications:',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: List.generate(
+                          record['PrescriptionItems'].length, (idx) {
+                        final item = record['PrescriptionItems'][idx];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            '${item['Medication']?['name'] ?? 'Medication'} - ${item['dosage'] ?? ''}, ${item['frequency'] ?? ''}, ${item['duration'] ?? ''}, ${item['instructions'] ?? ''}',
+                            style: GoogleFonts.poppins(
+                                fontSize: 14, color: textSecondaryColor),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Row(
                     children: [

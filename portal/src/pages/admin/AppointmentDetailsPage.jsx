@@ -365,7 +365,7 @@ export const AppointmentDetailsPage = () => {
 
       {/* Update Appointment Dialog */}
       <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
-        <DialogContent>
+  <DialogContent className={"lg:max-w-screen-lg overflow-y-scroll max-h-screen"}>
           <DialogHeader>
             <DialogTitle>Update Appointment</DialogTitle>
           </DialogHeader>

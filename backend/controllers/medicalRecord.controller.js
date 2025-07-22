@@ -3,6 +3,8 @@ import Patient from "../models/patients.model.js";
 import Doctor from "../models/doctors.model.js";
 import Appointment from "../models/appointments.model.js";
 import Notification from "../models/notifications.model.js";
+import PrescriptionItem from "../models/prescriptionItems.model.js";
+import Medication from "../models/medications.model.js";
 import { Op } from "sequelize";
 import path from "path";
 import fs from "fs/promises";
@@ -80,6 +82,37 @@ export const createMedicalRecord = async (req, res, next) => {
       // Don't fail the main operation if notification fails
     }
 
+    // If record_type === 'prescription' and req.body.prescription_items is an array, bulk create prescription items
+    let prescriptionItems = req.body.prescription_items;
+    if (typeof prescriptionItems === "string") {
+      try {
+        prescriptionItems = JSON.parse(prescriptionItems);
+      } catch (e) {
+        prescriptionItems = [];
+      }
+    }
+    if (
+      record_type === "prescription" &&
+      prescriptionItems &&
+      Array.isArray(prescriptionItems)
+    ) {
+      await Promise.all(
+        prescriptionItems.map(async (item) => {
+          const medication = await Medication.findByPk(item.medication_id);
+          if (medication) {
+            await PrescriptionItem.create({
+              medical_record_id: medicalRecord.id,
+              medication_id: item.medication_id,
+              dosage: item.dosage,
+              frequency: item.frequency,
+              duration: item.duration,
+              instructions: item.instructions,
+            });
+          }
+        })
+      );
+    }
+
     res.status(201).json({
       success: true,
       message: "Medical record created successfully",
@@ -107,6 +140,18 @@ export const getMedicalRecords = async (req, res, next) => {
         { model: Patient, attributes: ["name", "phone"] },
         { model: Doctor, attributes: ["name", "specialization"] },
         { model: Appointment, attributes: ["appointment_date"] },
+        {
+          model: PrescriptionItem,
+          include: [{ model: Medication, attributes: ["name"] }],
+          attributes: [
+            "id",
+            "medication_id",
+            "dosage",
+            "frequency",
+            "duration",
+            "instructions",
+          ],
+        },
       ],
     });
 
@@ -154,6 +199,31 @@ export const getMedicalRecordById = async (req, res, next) => {
       return res.status(403).json({
         success: false,
         message: "You don't have permission to view this record",
+      });
+    }
+
+    // If record_type === 'prescription', include prescription_items (with medication details) in the response
+    if (medicalRecord.record_type === "prescription") {
+      await medicalRecord.reload({
+        include: [
+          {
+            model: PrescriptionItem,
+            include: [
+              {
+                model: Medication,
+                attributes: ["name", "dosage_form", "strength"],
+              },
+            ],
+            attributes: [
+              "id",
+              "medication_id",
+              "dosage",
+              "frequency",
+              "duration",
+              "instructions",
+            ],
+          },
+        ],
       });
     }
 
@@ -213,6 +283,38 @@ export const updateMedicalRecord = async (req, res, next) => {
       description,
       file_url,
     });
+
+    // If record_type === 'prescription' and req.body.prescription_items is an array, delete old items and bulk create new ones
+    let prescriptionItems = req.body.prescription_items;
+    if (typeof prescriptionItems === "string") {
+      try {
+        prescriptionItems = JSON.parse(prescriptionItems);
+      } catch (e) {
+        prescriptionItems = [];
+      }
+    }
+    if (
+      record_type === "prescription" &&
+      prescriptionItems &&
+      Array.isArray(prescriptionItems)
+    ) {
+      await PrescriptionItem.destroy({ where: { medical_record_id: id } });
+      await Promise.all(
+        prescriptionItems.map(async (item) => {
+          const medication = await Medication.findByPk(item.medication_id);
+          if (medication) {
+            await PrescriptionItem.create({
+              medical_record_id: id,
+              medication_id: item.medication_id,
+              dosage: item.dosage,
+              frequency: item.frequency,
+              duration: item.duration,
+              instructions: item.instructions,
+            });
+          }
+        })
+      );
+    }
 
     res.status(200).json({
       success: true,
@@ -294,6 +396,18 @@ export const getMedicalRecordsByPatient = async (req, res, next) => {
       include: [
         { model: Doctor, attributes: ["name", "specialization"] },
         { model: Appointment, attributes: ["appointment_date"] },
+        {
+          model: PrescriptionItem,
+          include: [{ model: Medication, attributes: ["name"] }],
+          attributes: [
+            "id",
+            "medication_id",
+            "dosage",
+            "frequency",
+            "duration",
+            "instructions",
+          ],
+        },
       ],
     });
 
@@ -327,6 +441,18 @@ export const getMedicalRecordsByDoctor = async (req, res, next) => {
       include: [
         { model: Patient, attributes: ["name", "phone"] },
         { model: Appointment, attributes: ["appointment_date"] },
+        {
+          model: PrescriptionItem,
+          include: [{ model: Medication, attributes: ["name"] }],
+          attributes: [
+            "id",
+            "medication_id",
+            "dosage",
+            "frequency",
+            "duration",
+            "instructions",
+          ],
+        },
       ],
     });
 
@@ -369,6 +495,18 @@ export const getMedicalRecordsByAppointment = async (req, res, next) => {
       include: [
         { model: Patient, attributes: ["name", "phone"] },
         { model: Doctor, attributes: ["name", "specialization"] },
+        {
+          model: PrescriptionItem,
+          include: [{ model: Medication, attributes: ["name"] }],
+          attributes: [
+            "id",
+            "medication_id",
+            "dosage",
+            "frequency",
+            "duration",
+            "instructions",
+          ],
+        },
       ],
     });
 
@@ -398,6 +536,18 @@ export const getMedicalRecordsByDate = async (req, res, next) => {
         { model: Patient, attributes: ["name", "phone"] },
         { model: Doctor, attributes: ["name", "specialization"] },
         { model: Appointment, attributes: ["appointment_date"] },
+        {
+          model: PrescriptionItem,
+          include: [{ model: Medication, attributes: ["name"] }],
+          attributes: [
+            "id",
+            "medication_id",
+            "dosage",
+            "frequency",
+            "duration",
+            "instructions",
+          ],
+        },
       ],
     });
 

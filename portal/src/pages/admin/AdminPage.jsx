@@ -247,7 +247,7 @@ export const AdminsPage = () => {
 
       {/* Create Admin Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+  <DialogContent className={"lg:max-w-screen-lg overflow-y-scroll max-h-screen"}>
           <DialogHeader>
             <DialogTitle>Add New Admin</DialogTitle>
           </DialogHeader>

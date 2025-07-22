@@ -20,6 +20,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PublicRoute } from "@/components/PublicRoute";
 import { ViewAppointmentPage } from "./pages/admin/ViewAppointmentPage";
 import { AdminsPage } from "./pages/admin/AdminPage";
+import { MedicationsPage } from "@/pages/admin/MedicationsPage";
 
 export const App = () => {
   return (
@@ -54,6 +55,7 @@ export const App = () => {
               <Route path="doctors/:id" element={<ViewDoctorPage />} />
               <Route path="appointments/:id" element={<ViewAppointmentPage />} />
               <Route path="eye-tests" element={<EyeTestPage />} />
+              <Route path="medications" element={<MedicationsPage />} />
             </Route>
 
             {/* Doctor Routes */}

@@ -8,6 +8,8 @@ import MedicalRecord from "./medicalRecords.model.js";
 import Feedback from "./feedback.model.js";
 import EyeTest from "./eyeTests.model.js";
 import Notification from "./notifications.model.js";
+import Medication from "./medications.model.js";
+import PrescriptionItem from "./prescriptionItems.model.js";
 
 // TimeSlot associations
 Doctor.hasMany(TimeSlot, { foreignKey: "doctor_id" });
@@ -58,6 +60,14 @@ EyeTest.belongsTo(Patient, { foreignKey: "patient_id" });
 Patient.hasMany(Notification, { foreignKey: "patient_id" });
 Notification.belongsTo(Patient, { foreignKey: "patient_id" });
 
+// Medication associations
+Medication.hasMany(PrescriptionItem, { foreignKey: "medication_id" });
+PrescriptionItem.belongsTo(Medication, { foreignKey: "medication_id" });
+
+// PrescriptionItem associations
+PrescriptionItem.belongsTo(MedicalRecord, { foreignKey: "medical_record_id" });
+MedicalRecord.hasMany(PrescriptionItem, { foreignKey: "medical_record_id" });
+
 // Export all models
 export {
   Admin,
@@ -70,6 +80,8 @@ export {
   Feedback,
   EyeTest,
   Notification,
+  Medication,
+  PrescriptionItem,
 };
 
 // export default sequelize;

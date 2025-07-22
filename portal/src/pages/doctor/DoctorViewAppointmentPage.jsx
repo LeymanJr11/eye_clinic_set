@@ -12,6 +12,9 @@ import { ArrowLeft, User, Calendar, Clock, Plus, Edit, Trash2 } from "lucide-rea
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/ui/data-table";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 export const DoctorViewAppointmentPage = () => {
   const navigate = useNavigate();
@@ -32,6 +35,38 @@ export const DoctorViewAppointmentPage = () => {
   });
   const [selectedMedicalRecord, setSelectedMedicalRecord] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 1. Fetch medications for selector
+  const [medicationsList, setMedicationsList] = useState([]);
+  useEffect(() => {
+    if (isMedicalRecordDialogOpen) {
+      request({ method: 'GET', url: '/medications' })
+        .then(res => setMedicationsList(res.data || []));
+    }
+  }, [isMedicalRecordDialogOpen]);
+
+  // 2. Prescription items state
+  const [prescriptionItems, setPrescriptionItems] = useState([]);
+
+  // 3. Add/remove prescription item rows
+  const handleAddPrescriptionItem = () => {
+    setPrescriptionItems([...prescriptionItems, { medication_id: '', dosage: '', frequency: '', duration: '', instructions: '' }]);
+  };
+  const handleRemovePrescriptionItem = (idx) => {
+    setPrescriptionItems(prescriptionItems.filter((_, i) => i !== idx));
+  };
+  const handlePrescriptionItemChange = (idx, field, value) => {
+    setPrescriptionItems(prescriptionItems.map((item, i) => i === idx ? { ...item, [field]: value } : item));
+  };
+
+  // 4. When editing, load prescription items
+  useEffect(() => {
+    if (selectedMedicalRecord && selectedMedicalRecord.record_type === 'prescription') {
+      setPrescriptionItems(selectedMedicalRecord.prescription_items || []);
+    } else {
+      setPrescriptionItems([]);
+    }
+  }, [selectedMedicalRecord, isMedicalRecordDialogOpen]);
 
   const appointmentStatuses = [
     "scheduled",
@@ -88,6 +123,27 @@ export const DoctorViewAppointmentPage = () => {
           </a>
         ) : (
           "No file"
+        );
+      },
+    },
+    {
+      accessorKey: "PrescriptionItems",
+      header: "Prescribed Medications",
+      cell: ({ row }) => {
+        const record = row.original;
+        return (
+          <div className="mt-2 space-y-1">
+            <div className="font-semibold">Prescribed Medications:</div>
+            <ul className="list-disc ml-6">
+              {record.PrescriptionItems && record.PrescriptionItems.length > 0 && (
+                record.PrescriptionItems.map((item, idx) => (
+                  <li key={idx}>
+                    {item.Medication?.name || 'Medication'} - {item.dosage}, {item.frequency}, {item.duration}, {item.instructions}
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
         );
       },
     },
@@ -188,6 +244,11 @@ export const DoctorViewAppointmentPage = () => {
         formData.append("description", medicalRecordForm.description || "");
       }
 
+      const validPrescriptionItems = prescriptionItems.filter(item => item.medication_id);
+      if (medicalRecordForm.record_type === 'prescription') {
+        formData.append('prescription_items', JSON.stringify(validPrescriptionItems));
+      }
+
       if (selectedMedicalRecord) {
         await request({
           method: "PUT",
@@ -264,8 +325,201 @@ export const DoctorViewAppointmentPage = () => {
       description: record.description || "",
       file: null,
     });
+    if (record.record_type === 'prescription' && record.PrescriptionItems) {
+      setPrescriptionItems(
+        record.PrescriptionItems.map(item => ({
+          medication_id: item.medication_id?.toString() || "",
+          dosage: item.dosage || "",
+          frequency: item.frequency || "",
+          duration: item.duration || "",
+          instructions: item.instructions || "",
+        }))
+      );
+    } else {
+      setPrescriptionItems([]);
+    }
     setIsMedicalRecordDialogOpen(true);
   };
+
+const handleGeneratePdf = () => {
+  if (!medicalRecords.length) return;
+  
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  
+  // Colors
+  const primaryColor = [41, 128, 185]; // Blue
+  const secondaryColor = [52, 73, 94]; // Dark gray
+  const lightGray = [236, 240, 241];
+  const darkGray = [127, 140, 141];
+  
+  // Header section with background
+  doc.setFillColor(...primaryColor);
+  doc.rect(0, 0, pageWidth, 40, 'F');
+  
+  // Title
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  doc.text('MEDICAL RECORDS REPORT', pageWidth / 2, 18, { align: 'center' });
+  
+  // Subtitle
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Comprehensive Patient Medical History', pageWidth / 2, 28, { align: 'center' });
+  
+  // Patient Information Card
+  doc.setFillColor(...lightGray);
+  doc.roundedRect(14, 50, pageWidth - 28, 35, 3, 3, 'F');
+  
+  // Patient info content
+  doc.setTextColor(...secondaryColor);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PATIENT INFORMATION', 20, 62);
+  
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Name: ${appointment.patient?.name || 'N/A'}`, 20, 72);
+  doc.text(`Email: ${appointment.patient?.email || 'N/A'}`, 20, 80);
+  
+  const rightColumnX = pageWidth / 2 + 10;
+  doc.text(`Phone: ${appointment.patient?.phone || 'N/A'}`, rightColumnX, 72);
+  doc.text(`Appointment Date: ${format(new Date(appointment.appointment_date), "MMMM d, yyyy")}`, rightColumnX, 80);
+  
+  // Summary statistics
+  const totalRecords = medicalRecords.length;
+  const recordTypes = [...new Set(medicalRecords.map(r => r.record_type))];
+  const recordsWithFiles = medicalRecords.filter(r => r.file_url).length;
+  
+  // Statistics section
+  doc.setFillColor(248, 249, 250);
+  doc.roundedRect(14, 95, pageWidth - 28, 25, 3, 3, 'F');
+  
+  doc.setTextColor(...secondaryColor);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('SUMMARY STATISTICS', 20, 107);
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Total Records: ${totalRecords}`, 20, 115);
+  doc.text(`Record Types: ${recordTypes.length}`, 90, 115);
+  doc.text(`Records with Files: ${recordsWithFiles}`, 160, 115);
+  
+  // Prepare enhanced table data
+  const tableData = medicalRecords.map((rec, index) => [
+    (index + 1).toString(),
+    format(new Date(rec.createdAt), "MMM d, yyyy"),
+    rec.record_type.replace("_", " ").toUpperCase(),
+    rec.description || "No description provided",
+    rec.file_url ? "✓ Available" : "✗ None",
+  ]);
+  
+  // Generate table with enhanced styling
+  try {
+    autoTable(doc, {
+      startY: 130,
+      head: [["#", "Date", "Type", "Description", "File"]],
+      body: tableData,
+      theme: 'grid',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 4,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.5,
+        textColor: [60, 60, 60],
+        font: 'helvetica',
+      },
+      headStyles: { 
+        fillColor: primaryColor,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 10,
+        halign: 'center',
+        valign: 'middle',
+      },
+      alternateRowStyles: {
+        fillColor: [250, 250, 250],
+      },
+      columnStyles: {
+        0: { 
+          halign: 'center', 
+          cellWidth: 15,
+          fillColor: [245, 245, 245],
+          fontStyle: 'bold',
+        },
+        1: { 
+          halign: 'center', 
+          cellWidth: 30,
+        },
+        2: { 
+          halign: 'center', 
+          cellWidth: 35,
+          fontStyle: 'bold',
+        },
+        3: { 
+          cellWidth: 80,
+        },
+        4: { 
+          halign: 'center', 
+          cellWidth: 25,
+          fontStyle: 'bold',
+        },
+      },
+      margin: { top: 130, left: 14, right: 14 },
+      tableWidth: 'auto',
+      didDrawPage: function (data) {
+        // Add page numbers
+        doc.setFontSize(8);
+        doc.setTextColor(...darkGray);
+        doc.text(
+          `Page ${data.pageNumber}`,
+          pageWidth - 30,
+          pageHeight - 10
+        );
+      }
+    });
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    toast({
+      title: "Error",
+      description: "Failed to generate PDF. Please try again.",
+      variant: "destructive",
+    });
+    return;
+  }
+  
+  // Footer
+  const finalY = doc.lastAutoTable.finalY || 200;
+  if (finalY < pageHeight - 50) {
+    doc.setFillColor(...lightGray);
+    doc.rect(14, finalY + 20, pageWidth - 28, 30, 'F');
+    
+    doc.setTextColor(...darkGray);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'italic');
+    doc.text('This report was generated automatically and contains confidential medical information.', 20, finalY + 32);
+    doc.text(`Generated on: ${format(new Date(), 'MMMM d, yyyy HH:mm')}`, 20, finalY + 42);
+    
+    // Add a small medical icon using text
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'normal');
+    doc.text('⚕', pageWidth - 30, finalY + 38);
+  }
+  
+  // Save with enhanced filename
+  const patientName = appointment.patient?.name?.replace(/\s+/g, '_') || 'patient';
+  const dateStr = format(new Date(), 'yyyy-MM-dd');
+  doc.save(`Medical_Records_${patientName}_${dateStr}.pdf`);
+  
+  // Show success message
+  toast({
+    title: "Success",
+    description: "Professional PDF report generated successfully",
+  });
+};
 
   if (isLoading) {
     return (
@@ -382,18 +636,27 @@ export const DoctorViewAppointmentPage = () => {
                 <CardTitle>Medical Records</CardTitle>
                 <CardDescription>Manage patient medical records for this appointment</CardDescription>
               </div>
-              <Button onClick={() => {
-                setSelectedMedicalRecord(null);
-                setMedicalRecordForm({
-                  record_type: "",
-                  description: "",
-                  file: null,
-                });
-                setIsMedicalRecordDialogOpen(true);
-              }}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Medical Record
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleGeneratePdf}
+                  disabled={!medicalRecords.length}
+                  variant="secondary"
+                >
+                  Generate PDF
+                </Button>
+                <Button onClick={() => {
+                  setSelectedMedicalRecord(null);
+                  setMedicalRecordForm({
+                    record_type: "",
+                    description: "",
+                    file: null,
+                  });
+                  setIsMedicalRecordDialogOpen(true);
+                }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Medical Record
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -409,7 +672,7 @@ export const DoctorViewAppointmentPage = () => {
 
       {/* Status Update Dialog */}
       <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
-        <DialogContent>
+        <DialogContent className={"lg:max-w-screen-lg overflow-y-scroll max-h-screen"}>
           <DialogHeader>
             <DialogTitle>Update Appointment Status</DialogTitle>
           </DialogHeader>
@@ -503,6 +766,47 @@ export const DoctorViewAppointmentPage = () => {
                 }
               />
             </div>
+
+            {medicalRecordForm.record_type === 'prescription' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-semibold">Medications</h4>
+                  <Button type="button" onClick={handleAddPrescriptionItem} size="sm">Add Medication</Button>
+                </div>
+                {prescriptionItems.map((item, idx) => (
+                  <div key={idx} className="flex gap-2 items-end flex-wrap">
+                    <div className="flex-1 min-w-[180px]">
+                      <Label>Medication</Label>
+                      <Select value={item.medication_id} onValueChange={val => handlePrescriptionItemChange(idx, 'medication_id', val)}>
+                        <SelectTrigger><SelectValue placeholder="Select medication" /></SelectTrigger>
+                        <SelectContent>
+                          {medicationsList.map(med => (
+                            <SelectItem key={med.id} value={med.id.toString()}>{med.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex-1 min-w-[120px]">
+                      <Label>Dosage</Label>
+                      <Input value={item.dosage} onChange={e => handlePrescriptionItemChange(idx, 'dosage', e.target.value)} placeholder="e.g. 500mg" />
+                    </div>
+                    <div className="flex-1 min-w-[120px]">
+                      <Label>Frequency</Label>
+                      <Input value={item.frequency} onChange={e => handlePrescriptionItemChange(idx, 'frequency', e.target.value)} placeholder="e.g. Twice a day" />
+                    </div>
+                    <div className="flex-1 min-w-[120px]">
+                      <Label>Duration</Label>
+                      <Input value={item.duration} onChange={e => handlePrescriptionItemChange(idx, 'duration', e.target.value)} placeholder="e.g. 7 days" />
+                    </div>
+                    <div className="flex-1 min-w-[160px]">
+                      <Label>Instructions</Label>
+                      <Input value={item.instructions} onChange={e => handlePrescriptionItemChange(idx, 'instructions', e.target.value)} placeholder="e.g. After meals" />
+                    </div>
+                    <Button type="button" variant="destructive" size="icon" onClick={() => handleRemovePrescriptionItem(idx)} title="Remove"><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
           <DialogFooter>

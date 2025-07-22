@@ -295,7 +295,7 @@ export const PatientsPage = () => {
 
       {/* Create Patient Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className={"lg:max-w-screen-lg overflow-y-scroll max-h-screen"}>
           <DialogHeader>
             <DialogTitle>Add New Patient</DialogTitle>
           </DialogHeader>
@@ -393,7 +393,7 @@ export const PatientsPage = () => {
 
       {/* Edit Patient Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className={"lg:max-w-screen-lg overflow-y-scroll max-h-screen"}>
           <DialogHeader>
             <DialogTitle>Edit Patient</DialogTitle>
           </DialogHeader>
@@ -491,7 +491,7 @@ export const PatientsPage = () => {
 
       {/* Delete Patient Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className={"lg:max-w-screen-lg overflow-y-scroll max-h-screen"}>
           <DialogHeader>
             <DialogTitle>Delete Patient</DialogTitle>
           </DialogHeader>
