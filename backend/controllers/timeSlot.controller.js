@@ -271,7 +271,7 @@ export const getAvailableTimeSlots = async (req, res, next) => {
         message: "You don't have permission to view these time slots",
       });
     }
-    console.log(req.user);
+    // console.log(req.user);
 
     // Convert date to day of week
     const appointmentDay = new Date(date).toLocaleDateString("en-US", {
@@ -316,14 +316,16 @@ export const getAvailableTimeSlots = async (req, res, next) => {
       appointments.map((apt) => apt.time_slot_id)
     );
 
-    // Filter out time slots that are already booked
-    const availableTimeSlots = timeSlots.filter(
-      (slot) => !bookedTimeSlotIds.has(slot.id)
-    );
+    // Map all time slots, flagging booked ones
+    const slotsWithBookingStatus = timeSlots.map((slot) => {
+      const slotObj = slot.toJSON();
+      slotObj.isBooked = bookedTimeSlotIds.has(slot.id);
+      return slotObj;
+    });
 
     res.status(200).json({
       success: true,
-      data: availableTimeSlots,
+      data: slotsWithBookingStatus,
     });
   } catch (error) {
     next(error);

@@ -867,11 +867,43 @@ const timeOptions = Array.from({ length: 24 }, (_, i) => {
                   <SelectValue placeholder="Select time slot" />
                 </SelectTrigger>
                 <SelectContent>
-                  {timeSlots.map((slot) => (
-                    <SelectItem key={slot.id} value={slot.id.toString()}>
-                      {slot.day_of_week} - {slot.start_time} to {slot.end_time}
-                    </SelectItem>
-                  ))}
+                  {timeSlots.map((slot) => {
+                    // Check if the selected date is today and if the slot is in the past
+                    let isPast = false;
+                    if (appointmentForm.appointment_date) {
+                      const today = new Date();
+                      const selectedDate = new Date(appointmentForm.appointment_date);
+                      const isToday =
+                        today.getFullYear() === selectedDate.getFullYear() &&
+                        today.getMonth() === selectedDate.getMonth() &&
+                        today.getDate() === selectedDate.getDate();
+                      if (isToday) {
+                        const [endHour, endMinute, endSecond] = slot.end_time.split(":").map(Number);
+                        const slotEndDate = new Date(
+                          today.getFullYear(),
+                          today.getMonth(),
+                          today.getDate(),
+                          endHour,
+                          endMinute,
+                          endSecond || 0
+                        );
+                        if (today > slotEndDate) {
+                          isPast = true;
+                        }
+                      }
+                    }
+                    return (
+                      <SelectItem
+                        key={slot.id}
+                        value={slot.id.toString()}
+                        disabled={isPast}
+                        style={isPast ? { color: '#aaa', background: '#f8d7da' } : {}}
+                      >
+                        {slot.day_of_week} - {slot.start_time} to {slot.end_time}
+                        {isPast && ' (Past)'}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

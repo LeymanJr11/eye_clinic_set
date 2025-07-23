@@ -119,6 +119,8 @@ export const loginPatient = async (req, res, next) => {
           name: patient.name,
           phone: patient.phone,
           role: "patient",
+          gender: patient.gender,
+          date_of_birth: patient.date_of_birth,
         },
       },
     });
@@ -171,6 +173,8 @@ export const registerPatient = async (req, res, next) => {
           name: patient.name,
           phone: patient.phone,
           role: "patient",
+          gender: patient.gender,
+          date_of_birth: patient.date_of_birth,
         },
       },
     });

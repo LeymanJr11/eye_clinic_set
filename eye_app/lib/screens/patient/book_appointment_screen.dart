@@ -199,20 +199,102 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                           children: doctorProvider.timeSlots.map((slot) {
                             final isSelected =
                                 selectedTimeSlot == slot['id'].toString();
+                            final isBooked = slot['isBooked'] == true;
+                            // Check if the slot is in the past for today
+                            bool isPast = false;
+                            final now = DateTime.now();
+                            // Use the class-level selectedDate instead of redeclaring
+                            final isToday = now.year == selectedDate.year &&
+                                now.month == selectedDate.month &&
+                                now.day == selectedDate.day;
+                            if (isToday) {
+                              final endParts = (slot['end_time'] ?? '00:00:00')
+                                  .split(":")
+                                  .map((e) => int.tryParse(e) ?? 0)
+                                  .toList();
+                              final slotEnd = DateTime(
+                                now.year,
+                                now.month,
+                                now.day,
+                                endParts[0],
+                                endParts.length > 1 ? endParts[1] : 0,
+                                endParts.length > 2 ? endParts[2] : 0,
+                              );
+                              if (now.isAfter(slotEnd)) {
+                                isPast = true;
+                              }
+                            }
+                            final isDisabled = isBooked || isPast;
                             return ChoiceChip(
-                              label: Text(
-                                '${slot['start_time']} - ${slot['end_time']}',
-                                style: GoogleFonts.poppins(
-                                  color: isSelected ? Colors.white : null,
-                                ),
+                              label: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '${slot['start_time']} - ${slot['end_time']}',
+                                    style: GoogleFonts.poppins(
+                                      color: isDisabled
+                                          ? Colors.white
+                                          : isSelected
+                                              ? Colors.white
+                                              : null,
+                                    ),
+                                  ),
+                                  if (isBooked)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 6.0),
+                                      child: Text(
+                                        'Booked',
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  if (isPast && !isBooked)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 6.0),
+                                      child: Text(
+                                        'Past',
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                               selected: isSelected,
-                              onSelected: (selected) {
-                                setState(() {
-                                  selectedTimeSlot =
-                                      selected ? slot['id'].toString() : null;
-                                });
-                              },
+                              onSelected: isDisabled
+                                  ? null
+                                  : (selected) {
+                                      setState(() {
+                                        selectedTimeSlot = selected
+                                            ? slot['id'].toString()
+                                            : null;
+                                      });
+                                    },
+                              backgroundColor: isBooked
+                                  ? Colors.redAccent.withOpacity(0.7)
+                                  : isPast
+                                      ? Colors.grey.withOpacity(0.7)
+                                      : theme.chipTheme.backgroundColor,
+                              selectedColor: isBooked
+                                  ? Colors.redAccent
+                                  : isPast
+                                      ? Colors.grey
+                                      : theme.colorScheme.primary,
+                              disabledColor: isBooked
+                                  ? Colors.redAccent.withOpacity(0.7)
+                                  : Colors.grey.withOpacity(0.7),
+                              labelStyle: GoogleFonts.poppins(
+                                color: isDisabled
+                                    ? Colors.white
+                                    : isSelected
+                                        ? Colors.white
+                                        : null,
+                              ),
                             );
                           }).toList(),
                         ),

@@ -50,6 +50,34 @@ export const createAppointment = async (req, res, next) => {
       });
     }
 
+    // Check if the appointment is for today and the slot is in the past
+    const today = new Date();
+    const appointmentDateObj = new Date(appointment_date);
+    const isToday =
+      today.getFullYear() === appointmentDateObj.getFullYear() &&
+      today.getMonth() === appointmentDateObj.getMonth() &&
+      today.getDate() === appointmentDateObj.getDate();
+    if (isToday) {
+      // Combine today's date with slot end_time
+      const [endHour, endMinute, endSecond] = timeSlot.end_time
+        .split(":")
+        .map(Number);
+      const slotEndDate = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        endHour,
+        endMinute,
+        endSecond || 0
+      );
+      if (today > slotEndDate) {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot book a time slot that has already passed.",
+        });
+      }
+    }
+
     // Check if time slot is already booked
     const existingAppointment = await Appointment.findOne({
       where: {
