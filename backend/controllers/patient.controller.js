@@ -36,6 +36,21 @@ export const createPatient = async (req, res, next) => {
       });
     }
 
+    // Validate patient must be at least 3 months old
+    if (date_of_birth) {
+      const birthDate = new Date(date_of_birth);
+      const currentDate = new Date();
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
+      
+      if (birthDate > threeMonthsAgo) {
+        return res.status(400).json({
+          success: false,
+          message: "Patient must be at least 3 months old",
+        });
+      }
+    }
+
     // Check if patient with phone already exists
     if (phone) {
       const existingPhone = await Patient.findOne({ where: { phone } });
@@ -153,6 +168,21 @@ export const updatePatient = async (req, res, next) => {
         success: false,
         message: "Date of birth must be in YYYY-MM-DD format",
       });
+    }
+
+    // Validate patient must be at least 3 months old
+    if (date_of_birth) {
+      const birthDate = new Date(date_of_birth);
+      const currentDate = new Date();
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
+      
+      if (birthDate > threeMonthsAgo) {
+        return res.status(400).json({
+          success: false,
+          message: "Patient must be at least 3 months old",
+        });
+      }
     }
 
     // If updating phone, check for duplicates
