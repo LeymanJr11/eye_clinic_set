@@ -139,6 +139,21 @@ export const registerPatient = async (req, res, next) => {
 
     const { name, password, phone, gender, date_of_birth } = req.body;
 
+    // Validate patient must be at least 3 months old
+    if (date_of_birth) {
+      const birthDate = new Date(date_of_birth);
+      const currentDate = new Date();
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
+      
+      if (birthDate > threeMonthsAgo) {
+        return res.status(400).json({
+          success: false,
+          message: "Patient must be at least 3 months old",
+        });
+      }
+    }
+
     // Check if patient already exists
     const existingPatient = await Patient.findOne({ where: { phone } });
     if (existingPatient) {
